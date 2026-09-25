@@ -68,11 +68,6 @@ flowchart TD
     MCPClient -->|"result"| LLM
     LLM -->|"natural language response"| U
     Tools -->|"safe, bounded calls"| ExtSys
-
-    style MCP_BOUNDARY fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style MCPServer fill:#22c55e,color:#fff
-    style MCPClient fill:#86efac
-    style LLM fill:#3b82f6,color:#fff
 ```
 
 ---
@@ -99,11 +94,6 @@ flowchart LR
     MODEL["LLM"]
     SCHEMA -->|"Schema advertised\nto model at startup"| MODEL
     MODEL -->|"{ message: 'Buy milk' }\n(validated before execution)"| PY
-
-    style SERVER fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
-    style PY fill:#dbeafe
-    style SCHEMA fill:#bfdbfe
-    style MODEL fill:#3b82f6,color:#fff
 ```
 
 > **Diagram 8.2b — Bounded Execution: What the Model Can and Cannot Do**
@@ -242,12 +232,6 @@ flowchart TD
     ENV -->|"Loaded at startup"| MCPC
     REACT -->|"Natural language response"| U
 
-    style AGENT_SIDE fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
-    style SERVER_SIDE fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style PLUG fill:#fef9c3,stroke:#ca8a04
-    style ENV fill:#fef9c3,stroke:#ca8a04,stroke-dasharray:4 3
-    style LLM fill:#3b82f6,color:#fff
-    style FASTMCP fill:#22c55e,color:#fff
 ```
 
 > **Diagram 8.4b — Step-by-Step Request Lifecycle**
@@ -334,11 +318,6 @@ flowchart LR
     INTROSPECT -->|"stored in registry"| R
     R -->|"served at GET /mcp"| GE
 
-    style SERVER fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style REGISTRY fill:#dcfce7,stroke:#16a34a
-    style CLIENT fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
-    style AGENT fill:#3b82f6,color:#fff
-    style INTROSPECT fill:#bbf7d0
 ```
 
 ---
