@@ -15,7 +15,7 @@ Each diagram is self-contained and can be dropped directly into the correspondin
 > in production — connecting directly to §1.1 ("no undo button").
 
 ```mermaid
-%%{init: {"themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     U(["User"])
     LLM["LLM\nStateless · No undo\nNo validation"]
@@ -32,11 +32,6 @@ flowchart TD
     LLM -->|"bespoke code\nno schema"| T4
     T2 & T3 & T4 --> WARN
 
-    style LLM fill:#f87171,color:#fff
-    style T2 fill:#fbbf24,stroke:#ef4444,stroke-width:2px,stroke-dasharray:5 5
-    style T3 fill:#fbbf24,stroke:#ef4444,stroke-width:2px,stroke-dasharray:5 5
-    style T4 fill:#fbbf24,stroke:#ef4444,stroke-width:2px,stroke-dasharray:5 5
-    style WARN fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#b91c1c
 ```
 
 > **Diagram 8.1b — The Solution: MCP as a Standard Boundary**
@@ -106,7 +101,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-%%{init: {"themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
     MODEL["LLM / Agent"]
 
     subgraph ALLOWED ["✅ Within the Execution Boundary"]
@@ -132,10 +127,6 @@ flowchart TD
     ENV -->|"read once at startup"| T3
     ENV -->|"read once at startup"| T4
 
-    style ALLOWED fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style BLOCKED fill:#fef2f2,stroke:#ef4444,stroke-width:2px,stroke-dasharray:6 4
-    style ENV fill:#fef9c3,stroke:#ca8a04
-    style MODEL fill:#3b82f6,color:#fff
 ```
 
 ---
