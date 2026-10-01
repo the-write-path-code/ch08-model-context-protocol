@@ -17,21 +17,12 @@ Each diagram is self-contained and can be dropped directly into the correspondin
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
-    U(["User"])
-    LLM["LLM\nStateless · No undo\nNo validation"]
-    T1["Tool A\nRead-only API\n(low risk)"]
-    T2["Tool B\nDatabase\ndirect write"]
-    T3["Tool C\nSmart Plug\nraw TCP"]
-    T4["Tool D\nFile System\nunrestricted"]
-    WARN["⚠️ Every tool call is\npotentially irreversible\nNo schema · No boundary\nNo rollback"]
-
-    U -->|natural language| LLM
-    LLM -->|"bespoke code\nno schema"| T1
-    LLM -->|"bespoke code\nno schema"| T2
-    LLM -->|"bespoke code\nno schema"| T3
-    LLM -->|"bespoke code\nno schema"| T4
-    T2 & T3 & T4 --> WARN
-
+    U(["User"]) -->|"Natural language"| LLM["LLM<br/>Stateless · No undo<br/>No validation"]
+    LLM -->|"Bespoke code<br/>(no schema)"| T1["Tool A<br/>Read-only API<br/>(low risk)"]
+    LLM -->|"Bespoke code<br/>(no schema)"| T2["Tool B<br/>Database<br/>direct write"]
+    LLM -->|"Bespoke code<br/>(no schema)"| T3["Tool C<br/>Smart Plug<br/>raw TCP"]
+    LLM -->|"Bespoke code<br/>(no schema)"| T4["Tool D<br/>File System<br/>unrestricted"]
+    T2 & T3 & T4 --> WARN["<div style='min-width: 520px;'>⚠️ <b>Unchecked Execution</b><br/>Every tool call is potentially irreversible<br/>No schema · No boundary · No rollback</div>"]
 ```
 
 > **Diagram 8.1b — The Solution: MCP as a Standard Boundary**
@@ -43,23 +34,26 @@ flowchart TD
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
-    U(["User"]) <-->|"Natural language\n(Prompt / Response)"| LLM["LLM / Agent"]
-    LLM <-->|"Tool calls &\nvalidated results"| MCPClient
+    U(["User"]) <-->|"Natural language"| LLM["LLM / Agent"]
+    LLM <-->|"Tool name + typed args"| MCPClient
 
-    subgraph MCP_BOUNDARY ["MCP Boundary"]
+    subgraph MCP_BOUNDARY ["MCP Boundary (Mediated Security Layer)"]
         direction TB
-        MCPClient["MCP Client\n(MultiServerMCPClient)"]
-        MCPServer["MCP Server\n(FastMCP)"]
-        Tools["Registered Tools\n• fetch_weather · turn_device_on\n• turn_device_off · get_device_status"]
-        
-        MCPClient -->|"Validated protocol call"| MCPServer
-        MCPServer -->|"Enforce schema"| Tools
-        Tools -.->|"Structured result"| MCPClient
+        MCPClient["MCP Client (MultiServerMCPClient)"]
+        MCPServer["MCP Server (FastMCP)"]
+        MCPClient <-->|"Validated JSON-RPC & structured results"| MCPServer
+
+        T1["fetch_weather<br/>(read-only API)"]
+        T2["turn_device_on<br/>(bounded action)"]
+        T3["turn_device_off<br/>(bounded action)"]
+        T4["get_device_status<br/>(read-only status)"]
+
+        MCPServer <--> T1 & T2 & T3 & T4
     end
 
-    ExtSys["External Systems\n(APIs / Devices / Databases)"]
+    ExtSys["External Systems (APIs / Physical Devices / Databases)"]
 
-    Tools <-->|"Safe, bounded execution"| ExtSys
+    T1 & T2 & T3 & T4 <--> ExtSys
 ```
 
 ---
