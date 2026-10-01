@@ -43,26 +43,23 @@ flowchart TD
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
-    U(["User"])
-    LLM["LLM / Agent"]
+    U(["User"]) <-->|"Natural language\n(Prompt / Response)"| LLM["LLM / Agent"]
+    LLM <-->|"Tool calls &\nvalidated results"| MCPClient
 
     subgraph MCP_BOUNDARY ["MCP Boundary"]
         direction TB
         MCPClient["MCP Client\n(MultiServerMCPClient)"]
         MCPServer["MCP Server\n(FastMCP)"]
-        Tools["Registered Tools\n• fetch_weather\n• turn_device_on\n• turn_device_off\n• get_device_status"]
-        MCPClient -->|"Tool call + validated args"| MCPServer
-        MCPServer --> Tools
+        Tools["Registered Tools\n• fetch_weather · turn_device_on\n• turn_device_off · get_device_status"]
+        
+        MCPClient -->|"Validated protocol call"| MCPServer
+        MCPServer -->|"Enforce schema"| Tools
+        Tools -.->|"Structured result"| MCPClient
     end
 
-    ExtSys["External Systems\n(APIs / Devices / DBs)"]
+    ExtSys["External Systems\n(APIs / Devices / Databases)"]
 
-    U -->|natural language| LLM
-    LLM -->|"tool name + typed args"| MCPClient
-    Tools -->|"structured result"| MCPClient
-    MCPClient -->|"result"| LLM
-    LLM -->|"natural language response"| U
-    Tools -->|"safe, bounded calls"| ExtSys
+    Tools <-->|"Safe, bounded execution"| ExtSys
 ```
 
 ---
@@ -190,39 +187,26 @@ sequenceDiagram
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
-    U(["User"])
+    U(["User"]) -->|"Natural language command"| REACT["LangGraph ReAct Agent"]
 
     subgraph AGENT_SIDE ["Agent Process (client_kasa_workflow.py)"]
-        direction TB
-        LLM["LLM — OpenAI at startup\ngpt-5.4-nano"]
-        REACT["LangGraph\nReAct Agent"]
-        MCPC["MultiServerMCPClient\nhttp://localhost:8000/mcp"]
-        LLM <--> REACT
-        REACT <--> MCPC
+        REACT -->|"Prompt"| LLM["LLM Client (gpt-5.4-nano)"]
+        REACT -->|"Tool call"| MCPC["MultiServerMCPClient (port 8000)"]
     end
 
-    subgraph SERVER_SIDE ["Server Process"]
-        direction TB
-        SRVLABEL["kasa_smart_home_server.py (real)\nOR mock_kasa_server.py (no hardware)"]
-        FASTMCP["FastMCP Server\n(streamable-http, port 8000)"]
-        TOOLS["Registered Tools\n• list_smart_devices\n• turn_device_on\n• turn_device_off\n• get_device_status"]
-        KASA_SDK["python-kasa SDK\n(real server only)"]
-        SRVLABEL --> FASTMCP
-        FASTMCP --> TOOLS
-        TOOLS --> KASA_SDK
+    subgraph SERVER_SIDE ["Server Process (kasa_smart_home_server.py)"]
+        FASTMCP["FastMCP Server (streamable-http:8000)"]
+        FASTMCP --> TOOLS["Registered Tools (4 operations)"]
+        FASTMCP --> KASA_SDK["python-kasa SDK (hardware driver)"]
     end
 
-    PLUG["TP-Link Kasa\nSmart Plug\n(local network)"]
-    ENV[".env\nKASA_DEVICE_IP\nOPENAI_API_KEY"]
+    PLUG["TP-Link Kasa Smart Plug (local network)"]
+    ENV[".env: KASA_DEVICE_IP · OPENAI_API_KEY"]
 
-    U -->|"Natural language command"| REACT
-    MCPC <-->|"HTTP — MCP protocol"| FASTMCP
-    KASA_SDK <-->|"Wi-Fi (python-kasa)"| PLUG
-    PLUG -->|"Power state feedback"| KASA_SDK
-    ENV -->|"Loaded at startup"| FASTMCP
-    ENV -->|"Loaded at startup"| MCPC
-    REACT -->|"Natural language response"| U
-
+    MCPC -->|"HTTP — MCP protocol"| FASTMCP
+    KASA_SDK -->|"Local Wi-Fi"| PLUG
+    ENV -.->|"Loaded at startup"| AGENT_SIDE
+    ENV -.->|"Loaded at startup"| SERVER_SIDE
 ```
 
 > **Diagram 8.4b — Step-by-Step Request Lifecycle**
