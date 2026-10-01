@@ -134,37 +134,35 @@ flowchart TD
 
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
-sequenceDiagram
-    actor User
-    participant Agent as LLM Agent
-    participant Client as MCP Client
-    participant Server as MCP Server<br/>(external_tools_server.py)
-    participant WeatherAPI as WeatherAPI.com
-    participant NewsAPI as NewsAPI.org
+flowchart TD
+    TOP["<div style='min-width: 650px;'><b>User Request & Agent Tool Selection</b><br/>User: 'Weather in Austin & 3 AI headlines'<br/>➔ LLM Agent dispatches <code>fetch_weather</code> & <code>fetch_top_headlines</code></div>"]
 
-    User->>Agent: "What's the weather in Austin?<br/>And get me 3 AI news headlines."
+    subgraph GW ["<b>MCP Server: Safe External API Gateway</b> (external_tools_server.py)"]
+        direction TB
 
-    Note over Agent: Reasons about intent,<br/>selects tools
+        subgraph ROW1 ["Tool 1: Weather Flow (Auth Isolation & Response Trimming)"]
+            direction LR
+            W1["<b>1. Call</b><br/><code>fetch_weather(city='Austin')</code>"]
+            W2["<b>2. Auth Isolation</b><br/>Loads <code>WEATHER_API_KEY</code> from <code>.env</code><br/><i>(Key never exposed to model)</i>"]
+            W3["<b>3. Response Trimming</b><br/>Trims raw JSON to 7 safe fields<br/><code>{city, temp_c, condition, ...}</code>"]
+            W1 --> W2 --> W3
+        end
 
-    Agent->>Client: fetch_weather(city="Austin")
-    Client->>Server: Tool call: fetch_weather
-    Note over Server: Loads WEATHER_API_KEY<br/>from env (never from model)
-    Server->>WeatherAPI: GET /current.json?q=Austin
-    WeatherAPI-->>Server: Raw JSON (full payload)
-    Note over Server: Parses + trims:<br/>returns 7 fields only
-    Server-->>Client: {city, temp_c, condition, ...}
-    Client-->>Agent: Structured weather dict
+        subgraph ROW2 ["Tool 2: News Flow (Server-Side Rate & Volume Cap)"]
+            direction LR
+            N1["<b>1. Call</b><br/><code>fetch_top_headlines(topic='AI', max=3)</code>"]
+            N2["<b>2. Server Boundary</b><br/>Enforces cap: <code>max_results ≤ 10</code><br/><i>(Server-side hard limit)</i>"]
+            N3["<b>3. Schema Minimization</b><br/>Extracts minimal 3 safe fields<br/><code>{topic, total_found, articles[3]}</code>"]
+            N1 --> N2 --> N3
+        end
 
-    Agent->>Client: fetch_top_headlines(topic="AI agents", max_results=3)
-    Client->>Server: Tool call: fetch_top_headlines
-    Note over Server: Caps max_results ≤ 10<br/>server-side (model cannot override)
-    Server->>NewsAPI: GET /v2/everything?q=AI+agents&pageSize=3
-    NewsAPI-->>Server: Raw JSON (full payload)
-    Note over Server: Extracts title, source,<br/>published_at, url only
-    Server-->>Client: {topic, total_found, articles[3]}
-    Client-->>Agent: Structured headlines dict
+        ROW1 ~~~ ROW2
+    end
 
-    Agent->>User: "In Austin it's 91°F and sunny.<br/>Here are 3 recent AI headlines..."
+    BOT["<div style='min-width: 650px;'><b>Synthesized Final Response to User</b><br/>'In Austin: 91°F, sunny. Top 3 AI headlines: 1. DeepMind announces...'</div>"]
+
+    TOP --> GW
+    GW --> BOT
 ```
 
 ---
@@ -211,40 +209,24 @@ flowchart TD
 
 ```mermaid
 %%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
-sequenceDiagram
-    actor User
-    participant Agent as ReAct Agent<br/>(client_kasa_workflow.py)
-    participant LLM as LLM<br/>(OpenAI)
-    participant MCPClient as MultiServerMCPClient
-    participant MCPServer as FastMCP Server
-    participant Kasa as python-kasa SDK
-    participant Plug as Smart Plug
+flowchart TD
+    subgraph STACK ["End-to-End Request Lifecycle (Six Sequential Steps)"]
+        direction TB
 
-    Note over User,Plug: STEP 1 — User speaks their wish
-    User->>Agent: "Turn on the Smart Plug."
+        S1["<div style='min-width: 750px;'><b>Step 1 — User Instruction:</b> User issues natural language command<br/><code>'Turn on the Smart Plug.'</code> ➔ Received by LangGraph ReAct Agent</div>"]
 
-    Note over Agent,LLM: STEP 2 — The AI thinks and plans
-    Agent->>LLM: Prompt + tool schemas
-    LLM-->>Agent: Tool choice: turn_device_on()
+        S2["<div style='min-width: 750px;'><b>Step 2 — Model Reasoning & Tool Selection:</b> Agent queries LLM with tool schemas<br/>Model reasoning resolves intent ➔ Selected tool: <code>turn_device_on()</code></div>"]
 
-    Note over Agent,MCPServer: STEP 3 — The client makes the call
-    Agent->>MCPClient: turn_device_on()
-    MCPClient->>MCPServer: POST /mcp — tool: turn_device_on
+        S3["<div style='min-width: 750px;'><b>Step 3 — Protocol Dispatch:</b> <code>MultiServerMCPClient</code> dispatches validated call<br/>HTTP JSON-RPC request: <code>POST /mcp (tool: turn_device_on)</code> ➔ FastMCP Server</div>"]
 
-    Note over MCPServer,Plug: STEP 4 — The server gets to work
-    MCPServer->>Kasa: plug.turn_on()
-    Kasa->>Plug: Wi-Fi command: power ON
+        S4["<div style='min-width: 750px;'><b>Step 4 — Hardware Command Execution:</b> FastMCP Server invokes <code>python-kasa</code> SDK<br/>SDK translates tool call to local Wi-Fi command: <code>plug.turn_on()</code> ➔ Smart Plug</div>"]
 
-    Note over Plug,MCPServer: STEP 5 — The plug responds
-    Plug-->>Kasa: ACK (is_on: true)
-    Kasa-->>MCPServer: State updated
-    MCPServer-->>MCPClient: {alias, is_on: true, status: success}
+        S5["<div style='min-width: 750px;'><b>Step 5 — Device ACK & State Update:</b> Smart Plug confirms execution: <code>{is_on: true}</code><br/>Server receives ACK and formats structured JSON: <code>{alias, is_on: true, status: success}</code></div>"]
 
-    Note over MCPClient,User: STEP 6 — The AI reports back
-    MCPClient-->>Agent: Structured result
-    Agent->>LLM: Format response
-    LLM-->>Agent: "The Smart Plug is now on."
-    Agent-->>User: "The Smart Plug is now on."
+        S6["<div style='min-width: 750px;'><b>Step 6 — Synthesized Conversational Response:</b> MCP Client returns result to Agent<br/>Agent synthesizes final confirmation ➔ <code>'The Smart Plug is now on.'</code> ➔ User</div>"]
+
+        S1 ==> S2 ==> S3 ==> S4 ==> S5 ==> S6
+    end
 ```
 
 > **Diagram 8.4c — Four-Step Workflow: Tool Calls and Return Values**
