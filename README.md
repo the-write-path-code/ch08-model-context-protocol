@@ -6,6 +6,8 @@ This repository demonstrates how the Model Context Protocol (MCP) places a typed
 
 MCP provides a boundary. It does not make a registered tool safe by itself. Tool business logic, credentials, retry behavior, idempotency, authorization, and transaction safety remain the responsibility of the system behind the tool. Chapters 11 through 14 address those controls.
 
+For interactive visual walkthroughs of the MCP boundary, schema introspection, external API gateways, smart home execution lifecycles, and dynamic tool discovery, see the [interactive architecture and workflow diagrams](#architecture-and-workflow-diagrams).
+
 ## What You Will Run
 
 | Chapter sections | Demonstration | What it shows |
@@ -242,21 +244,26 @@ Run tests before changing a tool signature, server configuration, client discove
 │   ├── client_kasa_workflow.py        # Runtime tool discovery and client agent
 │   └── test_mock.py                   # Mock tool tests
 ├── workflow/
-│   └── workflow.md                    # Mermaid diagrams for Chapter 8
+│   ├── 01_mcp_standard_boundary.html          # Interactive MCP standard boundary workflow
+│   ├── 02_schema_and_bounded_execution.html    # Interactive type introspection & bounded context workflow
+│   ├── 03_external_api_gateway.html            # Interactive external API gateway pattern workflow
+│   ├── 04_smart_home_end_to_end_arch.html      # Interactive smart home end-to-end architecture workflow
+│   ├── 05_request_lifecycle_execution.html     # Interactive smart home request lifecycle workflow
+│   ├── 06_tool_registration_discovery.html     # Interactive tool registration & discovery workflow
+│   └── workflow.md                             # Mermaid source and reference tables
 └── tests/
 ```
 
-## Architecture Diagrams and Supporting Documents
+## Architecture and Workflow Diagrams
 
-The `workflow/workflow.md` document contains the Chapter 8 diagrams:
+Interactive Archify workflow diagrams illustrate the MCP client-server boundary, type introspection, API gateway isolation, smart home actuation lifecycles, and tool registration flows. The companion markdown reference with original Mermaid diagrams is available in `workflow/workflow.md`.
 
-- The failure mode when a model calls unrelated tools through bespoke code.
-- The MCP client-server boundary.
-- Schema generation from Python type annotations and docstrings.
-- Bounded execution, including server-owned device targeting.
-- External API gateway behavior.
-- The smart-home request lifecycle from user instruction through server response.
-- Tool discovery and schema evolution.
+- [01: MCP Standard Boundary Layer](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/01_mcp_standard_boundary.html) — Visualizes the standardized JSON-RPC boundary layer decoupling client agents from backend tools and preventing direct socket/API access.
+- [02: Schema Introspection and Bounded Execution](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/02_schema_and_bounded_execution.html) — Illustrates FastMCP type hint introspection and bounded execution contexts where server-side configuration prevents arbitrary device targeting.
+- [03: Safe External API Gateway Pattern](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/03_external_api_gateway.html) — Traces weather and news flows highlighting credential isolation, hard volume limits, and minimal schema response trimming.
+- [04: Smart Home End-to-End System Architecture](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/04_smart_home_end_to_end_arch.html) — Maps decoupled agent and server processes communicating over HTTP streamable transport to control local Wi-Fi smart plugs.
+- [05: Smart Home MCP Request Lifecycle](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/05_request_lifecycle_execution.html) — Steps through the six sequential phases from natural language user prompt to Wi-Fi relay execution and synthesized state confirmation.
+- [06: MCP Tool Registration and Dynamic Discovery](https://the-write-path-code.github.io/ch08-model-context-protocol/workflow/06_tool_registration_discovery.html) — Shows how `@mcp.tool()` decorators automatically generate JSON Schemas and expose them via `GET /mcp` for dynamic runtime client discovery.
 
 The module-level READMEs contain the detailed commands for each demonstration. The root README gives the reading order and the safety boundary shared by all three.
 
